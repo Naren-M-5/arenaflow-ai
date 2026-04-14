@@ -50,16 +50,21 @@ npm run dev
 
 ## Deployment
 
-A standard production `Dockerfile` is included. It is configured to run on Port **8080**, which is the standard default for Google Cloud Run.
+### 1. Firebase Hosting (Recommended)
+This platform is set up for rapid deployment via Firebase Hosting. Assuming you have the Firebase CLI installed:
+```bash
+npm run build
+firebase login
+firebase deploy
+```
 
-### Deploying to Google Cloud Run
-Assuming you have the `gcloud` CLI installed and authenticated:
+### 2. Google Cloud Run (Docker)
+A production `Dockerfile` is also included if you prefer containerized deployment (defaults to port 8080).
 ```bash
 gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/arenaflow-ai
 gcloud run deploy arenaflow-ai \
     --image gcr.io/YOUR_PROJECT_ID/arenaflow-ai \
     --platform managed \
     --region us-central1 \
-    --allow-unauthenticated \
-    --port 8080
+    --allow-unauthenticated
 ```
