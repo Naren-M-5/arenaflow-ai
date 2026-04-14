@@ -4,6 +4,17 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "dummy_key";
 const isRealSetup = API_KEY && !API_KEY.includes("dummy") && API_KEY !== "mock-key";
 const genAI = isRealSetup ? new GoogleGenerativeAI(API_KEY) : null;
 
+let lastCallTime = 0;
+const RATE_LIMIT_MS = 30000;
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now - lastCallTime < RATE_LIMIT_MS) {
+    throw new Error("429 simulated rate limit: Skipping API call to prevent quota exhaustion");
+  }
+  lastCallTime = now;
+}
+
 export async function getRoutingRecommendation(gate, section, contextualCrowdData) {
   if (!isRealSetup) {
     const gateInfo = contextualCrowdData.selectedGate || {};
@@ -13,6 +24,7 @@ export async function getRoutingRecommendation(gate, section, contextualCrowdDat
     return `Head straight to ${gate}. It's moving efficiently right now. If you need step-free access, use the access ramps located at the far left of the main entrance. Proceed directly to ${section}.`;
   }
   try {
+    checkRateLimit();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `
       You are an AI Smart Entry Assistant for a large sporting venue.
@@ -41,6 +53,7 @@ export async function getVenueTip(stadiumState) {
     return `Wait times are exceptionally low at ${quickGate ? quickGate.name.replace(' Entry', '') : 'Gate C'}, use it for quick entry!`;
   }
   try {
+    checkRateLimit();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `
       You are an AI venue assistant.
@@ -54,13 +67,14 @@ export async function getVenueTip(stadiumState) {
     return result.response.text();
   } catch (error) {
     console.error("Gemini API Error in venueTip:", error);
-    return "Check out the new merch stands near Gate C!";
+    return "Tip: Gate B and Gate E currently have the shortest queues. Head there for faster entry.";
   }
 }
 
 export async function askConcierge(question, context) {
   try {
     if (!genAI) throw new Error("API not initialized");
+    checkRateLimit();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `
       You are Fan AI Concierge for a sports venue.
@@ -109,6 +123,7 @@ export async function getAlertAction(zoneData) {
     return `Dispatch 2 additional stewards to ${zoneData.name} and temporarily reroute upcoming traffic to adjacent queue lines to alleviate the ${zoneData.density}% density load.`;
   }
   try {
+    checkRateLimit();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `
       You are an AI Staff Assistant.

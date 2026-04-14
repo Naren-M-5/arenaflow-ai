@@ -21,19 +21,16 @@ export default function FanMode({ accessibleMode }) {
   }, []);
 
   useEffect(() => {
-    // Generate tip whenever data significantly changes or on mount
+    // Generate tip only once when data becomes available to save API quota
     const fetchTip = async () => {
-      if (Object.keys(data.queues).length > 0) {
+      if (Object.keys(data.queues).length > 0 && tip === 'Loading smart tip...') {
         const venueTip = await getVenueTip(data);
         setTip(venueTip);
       }
     };
     
-    // Only fetch tip occasionally to save API calls
-    const interval = setInterval(fetchTip, 30000);
     fetchTip();
-    return () => clearInterval(interval);
-  }, [data]);
+  }, [data, tip]);
 
   const handleRouteSearch = async (e) => {
     e.preventDefault();
